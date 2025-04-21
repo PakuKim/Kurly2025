@@ -89,13 +89,15 @@ internal class NetworkModule {
 
                 validateResponse { response ->
                     if (!response.status.isSuccess()) {
+                        val errorCode = runCatching {
+                            JSONObject(response.bodyAsText()).getInt(RESPONSE_ERROR_CODE)
+                        }.getOrNull()
+
                         val errorMessage = runCatching {
                             JSONObject(response.bodyAsText()).getString(RESPONSE_ERROR_MESSAGE)
                         }.getOrNull()
 
-                        val errorCode = runCatching {
-                            JSONObject(response.bodyAsText()).getInt(RESPONSE_ERROR_CODE)
-                        }.getOrNull()
+                        Timber.tag("HttpResponseValidator").e("Message:$errorMessage Code:$errorCode")
 
                         throw CommonException(message = errorMessage, code = errorCode)
                     }
@@ -106,8 +108,8 @@ internal class NetworkModule {
 
     companion object {
         private const val BASE_URL = "https://kurly.com/"
-        private const val RESPONSE_ERROR_MESSAGE = "resultMessage"
-        private const val RESPONSE_ERROR_CODE = "resultCode"
+        private const val RESPONSE_ERROR_MESSAGE = "message"
+        private const val RESPONSE_ERROR_CODE = "code"
 
         private const val CONNECTION_TIMEOUT = 10_000L
     }

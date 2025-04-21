@@ -29,6 +29,7 @@ class MockInterceptor(context: Context) : Interceptor {
                     message(responseString)
                     body(responseString.toByteArray().toResponseBody("application/json".toMediaType()))
                     protocol(Protocol.HTTP_2)
+                    removeHeader("content-type")
                     addHeader("content-type", "application/json")
                     code(200)
                 }

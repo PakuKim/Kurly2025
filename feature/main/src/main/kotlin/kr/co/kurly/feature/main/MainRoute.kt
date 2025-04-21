@@ -1,163 +1,362 @@
 package kr.co.kurly.feature.main
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalAbsoluteTonalElevation
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import kotlinx.coroutines.flow.collectLatest
+import kr.co.kurly.common.ext.toNumberFormat
 import kr.co.kurly.core.ui.theme.MainColor
 import kr.co.kurly.core.ui.theme.MainTheme
+import kr.co.kurly.domain.model.ProductType
+import timber.log.Timber
 
-internal enum class MainBottomRoute(
-    val route: String,
-    val label: String,
-    val icon: ImageVector,
-    val background: Color,
-) {
-    HOME("homeRoute", "홈", Icons.Default.Home, MainColor.background),
-    ACTIVITY("activityRoute", "활동", Icons.Default.ShoppingCart, MainColor.white),
-    PROFILE("profileRoute", "마이페이지", Icons.Default.Person, MainColor.white),
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun MainRoute(
-    viewModel: MainViewModel = hiltViewModel(),
-    mainBuilder: NavGraphBuilder.() -> Unit
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    var isLoading by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel.isLoading) {
+        viewModel.isLoading.collectLatest {
+            isLoading = it
+            Timber.d("isLoading: $it")
+        }
+    }
+
     MainScreen(
-        mainBuilder = mainBuilder
+        state = state,
+        isLoading = isLoading,
+        onRefresh = viewModel::refresh,
+        onLoadMore = viewModel::load
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreen(
-    mainNavController: NavHostController = rememberNavController(),
-    mainBuilder: NavGraphBuilder.() -> Unit
+    state: MainViewModel.State = MainViewModel.State(),
+    isLoading: Boolean = false,
+    onRefresh: () -> Unit = {},
+    onLoadMore: () -> Unit = {},
 ) {
-    val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    Box(
+    Scaffold(
         modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()
-    ) {
-        Scaffold(
-            containerColor = MainBottomRoute.entries.find { currentRoute == it.route }
-                ?.background ?: MainColor.white,
-            bottomBar = {
-                MainBottomScreen(
-                    mainNavController = mainNavController
-                )
+            .fillMaxSize(),
+        topBar = {
+            TopAppBar(title = { Text("Main") })
+        }
+    ) { scaffoldPadding ->
+        LazyVerticalGrid(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(scaffoldPadding)
+                .padding(horizontal = 16.dp),
+            columns = GridCells.Fixed(3),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            state.products.forEach { section ->
+                item(
+                    span = { GridItemSpan(3) }
+                ) {
+                    MainSectionScreen(
+                        title = section.title
+                    )
+                }
+
+                when (section.type) {
+                    ProductType.VERTICAL -> {
+                        items(
+                            items = section.products,
+                            span = { GridItemSpan(3) }
+                        ) { product ->
+                            MainLargeProductItem(
+                                src = product.image,
+                                isLiked = state.likedIds.contains(product.id),
+                                title = product.name,
+                                price = product.originalPrice,
+                                originalPrice = product.discountedPrice,
+                                saleRatio = product.saleRate
+                            )
+                        }
+                    }
+
+                    ProductType.HORIZONTAL -> {
+                        item(
+                            span = { GridItemSpan(3) }
+                        ) {
+                            LazyRow {
+                                items(section.products) { product ->
+                                    MainSmallProductItem(
+                                        src = product.image,
+                                        isLiked = state.likedIds.contains(product.id),
+                                        title = product.name,
+                                        price = product.originalPrice,
+                                        originalPrice = product.discountedPrice,
+                                        saleRatio = product.saleRate
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    ProductType.GRID -> {
+                        items(section.products) { product ->
+                            MainSmallProductItem(
+                                src = product.image,
+                                isLiked = state.likedIds.contains(product.id),
+                                title = product.name,
+                                price = product.originalPrice,
+                                originalPrice = product.discountedPrice,
+                                saleRatio = product.saleRate
+                            )
+                        }
+                    }
+                }
             }
-        ) { scaffoldPadding ->
-            NavHost(
+        }
+    }
+}
+
+@Composable
+private fun MainSectionScreen(
+    title: String
+) {
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text(
+        text = title,
+        style = MainTheme.typography.header01EB
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+}
+
+@Composable
+private fun MainSmallProductItem(
+    src: String?,
+    isLiked: Boolean,
+    title: String,
+    price: Int,
+    originalPrice: Int?,
+    saleRatio: Int?
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box {
+            AsyncImage(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(scaffoldPadding),
-                navController = mainNavController,
-                startDestination = MainBottomRoute.HOME.route,
-                builder = mainBuilder,
+                    .size(
+                        width = 150.dp,
+                        height = 200.dp
+                    ),
+                model = src,
+                contentDescription = "Product Image",
+                contentScale = ContentScale.FillBounds,
+            )
+
+            Image(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .size(24.dp),
+                painter = painterResource(
+                    if (isLiked) {
+                        kr.co.kurly.core.ui.R.drawable.ic_btn_heart_on
+                    } else {
+                        kr.co.kurly.core.ui.R.drawable.ic_btn_heart_off
+                    }
+                ),
+                contentDescription = "Product Liked"
+            )
+        }
+
+        Text(
+            text = title,
+            style = MainTheme.typography.header01R
+        )
+
+        Text(
+            text = buildAnnotatedString {
+                saleRatio?.let {
+                    withStyle(
+                        MainTheme.typography.body01B.toSpanStyle().copy(
+                            color = MainColor.orange
+                        )
+                    ) {
+                        append("$it% ")
+                    }
+                }
+
+                withStyle(MainTheme.typography.body01B.toSpanStyle()) {
+                    append(price.toNumberFormat() + "원")
+                }
+            }
+        )
+
+        originalPrice?.let {
+            Text(
+                text = it.toNumberFormat() + "원",
+                style = MainTheme.typography.body01R.copy(
+                    color = MainColor.grey
+                ),
+                textDecoration = TextDecoration.LineThrough
             )
         }
     }
 }
 
 @Composable
-private fun MainBottomScreen(
-    mainNavController: NavController,
+private fun MainLargeProductItem(
+    src: String?,
+    isLiked: Boolean,
+    title: String,
+    price: Int,
+    originalPrice: Int?,
+    saleRatio: Int?
 ) {
-    val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    NavigationBar(
-        modifier = Modifier
-            .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp
-                )
-            ),
-        containerColor = MainColor.white,
-        tonalElevation = 0.dp,
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        MainBottomRoute.entries.forEach { screen ->
-            NavigationBarItem(
-                selected = currentRoute == screen.route,
-                onClick = {
-                    mainNavController.navigate(screen.route) {
-                        popUpTo(mainNavController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
+        Box {
+            AsyncImage(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.5f),
+                model = src,
+                contentDescription = "Product Image",
+                contentScale = ContentScale.Crop,
+            )
+
+            Image(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .size(24.dp),
+                painter = painterResource(
+                    if (isLiked) {
+                        kr.co.kurly.core.ui.R.drawable.ic_btn_heart_on
+                    } else {
+                        kr.co.kurly.core.ui.R.drawable.ic_btn_heart_off
                     }
-                },
-                icon = {
-                    Icon(
-                        imageVector = screen.icon,
-                        contentDescription = screen.label
-                    )
-                },
-                label = {
-                    Text(
-                        text = screen.label,
-                        style = MainTheme.typography.caption01B
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MainColor.subColor03,
-                    selectedTextColor = MainColor.subColor03,
-                    unselectedIconColor = MainColor.grey05,
-                    unselectedTextColor = MainColor.grey03,
-                    indicatorColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
-                        LocalAbsoluteTonalElevation.current
-                    )
-                )
+                ),
+                contentDescription = "Product Liked"
             )
         }
+
+        Text(
+            text = title,
+            style = MainTheme.typography.header01R
+        )
+
+        Text(
+            text = buildAnnotatedString {
+                saleRatio?.let {
+                    withStyle(
+                        MainTheme.typography.body01B.toSpanStyle().copy(
+                            color = MainColor.orange
+                        )
+                    ) {
+                        append("$it% ")
+                    }
+                }
+
+                withStyle(MainTheme.typography.body01B.toSpanStyle()) {
+                    append(price.toNumberFormat() + "원")
+                }
+
+                originalPrice?.let {
+                    withStyle(
+                        MainTheme.typography.body01R.toSpanStyle().copy(
+                            fontSize = 13.sp,
+                            textDecoration = TextDecoration.LineThrough
+                        )
+                    ) {
+                        append(it.toNumberFormat() + "원")
+                    }
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun MainScreenPreview() {
+    MainTheme {
+        MainScreen()
     }
 }
 
 @Preview
 @Composable
-private fun MainBottomScreenPreview() {
+private fun MainSmallProductPreview() {
     MainTheme {
-        MainBottomScreen(
-            mainNavController = rememberNavController()
+        MainSmallProductItem(
+            src = null,
+            isLiked = true,
+            title = "TEST",
+            price = 10000,
+            originalPrice = 10000,
+            saleRatio = 5
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun MainLargeProductPreview() {
+    MainTheme {
+        MainLargeProductItem(
+            src = null,
+            isLiked = true,
+            title = "TEST",
+            price = 10000,
+            originalPrice = 10000,
+            saleRatio = 5
         )
     }
 }

@@ -3,7 +3,6 @@ import kr.co.kurly.remote
 plugins {
     alias(libs.plugins.kurly.android.library)
     alias(libs.plugins.kurly.android.hilt)
-    id("com.google.devtools.ksp")
     id("kotlinx-serialization")
 }
 
