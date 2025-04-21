@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="NightAdjusted.Theme.Kurly" parent="android:Theme.Material.NoActionBar" />
+</resources>

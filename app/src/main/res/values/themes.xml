@@ -1,0 +1,7 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="NightAdjusted.Theme.Kurly" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- The final theme we use -->
+    <style name="Theme.Kurly" parent="NightAdjusted.Theme.Kurly" />
+</resources>
