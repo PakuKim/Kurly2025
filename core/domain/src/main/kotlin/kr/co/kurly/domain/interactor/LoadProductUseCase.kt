@@ -8,5 +8,5 @@ import javax.inject.Singleton
 class LoadProductUseCase @Inject constructor(
     private val repository: ProductRepository
 ){
-    suspend operator fun invoke(page: Int? = null) = repository.load(page)
+    suspend operator fun invoke(refresh: Boolean) = repository.load(refresh)
 }

@@ -11,7 +11,7 @@ interface ProductRepository {
 
     suspend fun updateLiked(id: Long, isLiked: Boolean)
 
-    fun fetchProducts(): Flow<List<ProductSection>>
+    fun fetchProducts(): Flow<Pair<Boolean, List<ProductSection>>>
 
-    suspend fun load(page: Int?)
+    suspend fun load(refresh: Boolean)
 }

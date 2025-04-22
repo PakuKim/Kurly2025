@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -125,13 +126,21 @@ private fun MainScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 onLoadMore = onLoadMore
             ) {
-                state.products.forEach { section ->
+                state.products.forEachIndexed { index, section ->
                     item(
                         span = { GridItemSpan(maxLineSpan) }
                     ) {
-                        MainSectionScreen(
-                            title = section.title
-                        )
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            if (index != 0) {
+                                HorizontalDivider()
+                            }
+
+                            MainSectionScreen(
+                                title = section.title
+                            )
+                        }
                     }
 
                     when (section.type) {

@@ -42,12 +42,14 @@ internal open class MainViewModel @Inject constructor(
 
     fun refresh() = launch {
         setRefreshing(true)
-        loadProductUseCase(1)
+        loadProductUseCase(true)
     }
 
     fun load() = launch {
-        setLoading(true)
-        loadProductUseCase()
+        if (currentState.hasMore && !isLoading.value) {
+            setLoading(true)
+            loadProductUseCase(false)
+        }
     }
 
     private fun setRefreshing(isRefreshing: Boolean) = viewModelScope.launch {
@@ -78,7 +80,10 @@ internal open class MainViewModel @Inject constructor(
                 setRefreshing(false)
                 setLoading(false)
                 updateState {
-                    copy(products = it.toMutableStateList())
+                    copy(
+                        hasMore = it.first,
+                        products = it.second.toMutableStateList()
+                    )
                 }
             }
         }
@@ -90,6 +95,7 @@ internal open class MainViewModel @Inject constructor(
 
     data class State(
         val likedIds: Set<Long> = emptySet(),
-        val products: SnapshotStateList<ProductSection> = mutableStateListOf()
+        val products: SnapshotStateList<ProductSection> = mutableStateListOf(),
+        val hasMore: Boolean = false,
     ) : BaseViewModel.State
 }

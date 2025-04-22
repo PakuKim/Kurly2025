@@ -26,14 +26,20 @@ internal class ProductRepositoryImpl @Inject constructor(
     override val notification: SharedFlow<Unit> = _notification.asSharedFlow()
 
     private val products = mutableListOf<ProductSection>()
-    private var currentPage: Int = 1
+    private var nextPage: Int = 1
+    private var hasMore: Boolean = false
 
     private fun receiveNotification(): Flow<Unit> {
         return notification
             .onStart { emit(Unit) }
             .onEach {
-                val section = remote.fetchSection(currentPage)
-                currentPage = section.paging?.nextPage ?: 0
+                val section = remote.fetchSection(nextPage)
+                if (section.paging?.nextPage != null) {
+                    hasMore = true
+                    nextPage = section.paging.nextPage
+                } else {
+                    hasMore = false
+                }
 
                 coroutineScope {
                     section.data.map { data ->
@@ -58,16 +64,19 @@ internal class ProductRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun fetchProducts(): Flow<List<ProductSection>> {
-        return receiveNotification().mapLatest { products }
+    override fun fetchProducts(): Flow<Pair<Boolean, List<ProductSection>>> {
+        return receiveNotification().mapLatest { hasMore to products }
     }
 
-    override suspend fun load(page: Int?) {
-        page?.let {
-            currentPage = it
+    override suspend fun load(refresh: Boolean) {
+        if (refresh) {
             products.clear()
+            nextPage = 1
+            hasMore = true
         }
 
-        if (currentPage > 0) _notification.emit(Unit)
+        if (hasMore) {
+            _notification.emit(Unit)
+        }
     }
 }
