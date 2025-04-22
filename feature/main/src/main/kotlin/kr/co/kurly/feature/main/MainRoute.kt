@@ -51,6 +51,7 @@ import kr.co.kurly.common.ext.toNumberFormat
 import kr.co.kurly.core.ui.theme.MainColor
 import kr.co.kurly.core.ui.theme.MainTheme
 import kr.co.kurly.core.ui.widget.InfiniteLazyVerticalGrid
+import kr.co.kurly.core.ui.widget.LoadingScreen
 import kr.co.kurly.domain.model.ProductType
 
 @Composable
@@ -74,14 +75,16 @@ internal fun MainRoute(
         }
     }
 
-    MainScreen(
-        state = state,
-        isLoading = isLoading,
-        isRefreshing = isRefreshing,
-        onRefresh = viewModel::refresh,
-        onLoadMore = viewModel::load,
-        onLikeClick = viewModel::onLiked
-    )
+    LoadingScreen(isLoading = state.products.isEmpty()) {
+        MainScreen(
+            state = state,
+            isLoading = isLoading,
+            isRefreshing = isRefreshing,
+            onRefresh = viewModel::refresh,
+            onLoadMore = viewModel::load,
+            onLikeClick = viewModel::onLiked
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -188,7 +191,7 @@ private fun MainScreen(
                         }
 
                         ProductType.GRID -> {
-                            items(section.products) { product ->
+                            items(section.products.take(6)) { product ->
                                 MainSmallProductItem(
                                     id = product.id,
                                     src = product.image,
@@ -402,7 +405,7 @@ private fun MainLargeProductItem(
                             textDecoration = TextDecoration.LineThrough
                         )
                     ) {
-                        append(it.toNumberFormat() + "원")
+                        append(" " + it.toNumberFormat() + "원")
                     }
                 }
             },
