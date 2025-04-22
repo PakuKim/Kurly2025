@@ -44,7 +44,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -145,7 +144,6 @@ private fun MainScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 onLoadMore = onLoadMore
             ) {
-
                 state.products.forEachIndexed { index, section ->
                     item(
                         span = { GridItemSpan(maxLineSpan) }
@@ -174,8 +172,8 @@ private fun MainScreen(
                                     src = product.image,
                                     isLiked = state.likedIds.contains(product.id),
                                     title = product.name,
-                                    price = product.originalPrice,
-                                    originalPrice = product.discountedPrice,
+                                    originalPrice = product.originalPrice,
+                                    discountedPrice = product.disCountedPrice,
                                     saleRatio = product.saleRate,
                                     onLikeClick = onLikeClick
                                 )
@@ -198,8 +196,8 @@ private fun MainScreen(
                                             isLiked = state.likedIds.contains(product.id),
                                             title = product.name,
                                             price = product.originalPrice,
-                                            originalPrice = product.discountedPrice,
-                                            saleRatio = product.saleRate,
+                                            discountedPrice = product.disCountedPrice,
+                                            saleRate = product.saleRate,
                                             onLikeClick = onLikeClick
                                         )
                                     }
@@ -215,8 +213,8 @@ private fun MainScreen(
                                     isLiked = state.likedIds.contains(product.id),
                                     title = product.name,
                                     price = product.originalPrice,
-                                    originalPrice = product.discountedPrice,
-                                    saleRatio = product.saleRate,
+                                    discountedPrice = product.disCountedPrice,
+                                    saleRate = product.saleRate,
                                     onLikeClick = onLikeClick
                                 )
                             }
@@ -261,8 +259,8 @@ private fun MainSmallProductItem(
     isLiked: Boolean,
     title: String,
     price: Int,
-    originalPrice: Int?,
-    saleRatio: Int?,
+    discountedPrice: Int?,
+    saleRate: Int?,
     onLikeClick: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
     Column(
@@ -311,7 +309,7 @@ private fun MainSmallProductItem(
 
         Text(
             text = buildAnnotatedString {
-                saleRatio?.let {
+                saleRate?.let {
                     withStyle(
                         MainTheme.typography.body01B.toSpanStyle().copy(
                             color = MainColor.orange
@@ -322,7 +320,11 @@ private fun MainSmallProductItem(
                 }
 
                 withStyle(MainTheme.typography.body01B.toSpanStyle()) {
-                    append(price.toNumberFormat() + "원")
+                    if (discountedPrice == null) {
+                        append(price.toNumberFormat() + "원")
+                    } else {
+                        append(discountedPrice.toNumberFormat() + "원")
+                    }
                 }
             },
             maxLines = 1,
@@ -331,13 +333,13 @@ private fun MainSmallProductItem(
 
         Text(
             modifier = Modifier,
-            text = if (originalPrice != null) {
-                originalPrice.toNumberFormat() + "원"
+            text = if (discountedPrice != null) {
+                price.toNumberFormat() + "원"
             } else {
                 "-"
             },
             style = MainTheme.typography.body01R.copy(
-                color = if (originalPrice != null) {
+                color = if (discountedPrice != null) {
                     MainColor.grey
                 } else {
                     MainColor.white
@@ -354,8 +356,8 @@ private fun MainLargeProductItem(
     src: String?,
     isLiked: Boolean,
     title: String,
-    price: Int,
-    originalPrice: Int?,
+    originalPrice: Int,
+    discountedPrice: Int?,
     saleRatio: Int?,
     onLikeClick: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
@@ -411,19 +413,24 @@ private fun MainLargeProductItem(
                     }
                 }
 
-                withStyle(MainTheme.typography.body01B.toSpanStyle()) {
-                    append(price.toNumberFormat() + "원")
+                discountedPrice?.let {
+                    withStyle(
+                        MainTheme.typography.body01B.toSpanStyle()
+                    ) {
+                        append(it.toNumberFormat() + "원 ")
+                    }
                 }
 
-                originalPrice?.let {
-                    withStyle(
+                withStyle(
+                    if (discountedPrice != null) {
                         MainTheme.typography.body01R.toSpanStyle().copy(
-                            fontSize = 13.sp,
                             textDecoration = TextDecoration.LineThrough
                         )
-                    ) {
-                        append(" " + it.toNumberFormat() + "원")
+                    } else {
+                        MainTheme.typography.body01B.toSpanStyle()
                     }
+                ) {
+                    append(originalPrice.toNumberFormat() + "원")
                 }
             },
             maxLines = 1,
@@ -451,8 +458,8 @@ private fun MainSmallProductPreview() {
             isLiked = true,
             title = "TEST",
             price = 10000,
-            originalPrice = 10000,
-            saleRatio = 5
+            discountedPrice = 10000,
+            saleRate = 5
         )
     }
 }
@@ -466,8 +473,8 @@ private fun MainLargeProductPreview() {
             src = null,
             isLiked = true,
             title = "TEST",
-            price = 10000,
             originalPrice = 10000,
+            discountedPrice = 10000,
             saleRatio = 5
         )
     }

@@ -10,12 +10,12 @@ internal object ProductRemoteMapper: Mapper<GetProductListResponse.Data, Product
     override fun mapToRight(from: GetProductListResponse.Data): ProductData {
         return from.let { product ->
             ProductData(
-                discountedPrice = product.discountedPrice,
                 id = product.id,
                 image = product.image,
                 isSoldOut = product.isSoldOut,
                 name = product.name,
-                originalPrice = product.originalPrice
+                originalPrice = product.originalPrice,
+                disCountedPrice = product.discountedPrice
             )
         }
     }

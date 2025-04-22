@@ -19,8 +19,8 @@ internal object ProductSectionDataMapper : Mapper<Pair<ProductSectionData.Data, 
                     image = product.image,
                     name = product.name,
                     originalPrice = product.originalPrice,
-                    discountedPrice = product.discountedPrice,
-                    saleRate = product.discountedPrice?.let { price ->
+                    disCountedPrice = product.disCountedPrice,
+                    saleRate = product.disCountedPrice?.let { price ->
                         ((product.originalPrice - price) / product.originalPrice.toFloat() * 100).toInt()
                     },
                     isSoldOut = product.isSoldOut

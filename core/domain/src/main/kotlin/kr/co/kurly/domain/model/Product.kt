@@ -9,7 +9,7 @@ data class Product(
     val image: String,
     val name: String,
     val originalPrice: Int,
-    val discountedPrice: Int?,
+    val disCountedPrice: Int?,
     val saleRate: Int?,
     val isSoldOut: Boolean
 ): Parcelable
