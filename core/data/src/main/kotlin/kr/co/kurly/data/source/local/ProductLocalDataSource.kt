@@ -6,4 +6,6 @@ interface ProductLocalDataSource {
     fun fetchLikedIds(): Flow<Set<Long>>
 
     suspend fun saveLikedId(id: Long)
+
+    suspend fun deleteLikedId(id: Long)
 }

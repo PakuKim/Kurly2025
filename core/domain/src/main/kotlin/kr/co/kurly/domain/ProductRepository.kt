@@ -9,6 +9,8 @@ interface ProductRepository {
 
     fun fetchLikedIds(): Flow<Set<Long>>
 
+    suspend fun updateLiked(id: Long, isLiked: Boolean)
+
     fun fetchProducts(): Flow<List<ProductSection>>
 
     suspend fun load(page: Int?)

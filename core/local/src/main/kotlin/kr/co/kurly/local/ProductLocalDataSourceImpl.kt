@@ -22,9 +22,17 @@ internal class ProductLocalDataSourceImpl @Inject constructor(
 
     override suspend fun saveLikedId(id: Long) {
         dataStore.edit { pref ->
-            pref[PRODUCT_LIKED_IDS]?.toMutableSet()?.apply {
+            pref[PRODUCT_LIKED_IDS] = (pref[PRODUCT_LIKED_IDS] ?: emptySet()).toMutableSet().apply {
                 add(id.toString())
             }
+        }
+    }
+
+    override suspend fun deleteLikedId(id: Long) {
+        dataStore.edit { pref ->
+            pref[PRODUCT_LIKED_IDS] = pref[PRODUCT_LIKED_IDS]?.toMutableSet()?.apply {
+                remove(id.toString())
+            } ?: emptySet()
         }
     }
 

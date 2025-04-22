@@ -33,7 +33,8 @@ class MockInterceptor(context: Context) : Interceptor {
                     addHeader("content-type", "application/json")
                     code(200)
                 }
+            }.build().also {
+                it.close()
             }
-            .build()
     }
 }

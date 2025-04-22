@@ -1,22 +1,24 @@
 package kr.co.kurly.feature.main
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,7 +35,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,10 +49,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kr.co.kurly.common.ext.toNumberFormat
 import kr.co.kurly.core.ui.theme.MainColor
 import kr.co.kurly.core.ui.theme.MainTheme
+import kr.co.kurly.core.ui.widget.InfiniteLazyVerticalGrid
 import kr.co.kurly.domain.model.ProductType
-import timber.log.Timber
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun MainRoute(
     viewModel: MainViewModel = hiltViewModel()
@@ -56,19 +59,27 @@ internal fun MainRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     var isLoading by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
 
-    LaunchedEffect(viewModel.isLoading) {
+    LaunchedEffect(Unit) {
         viewModel.isLoading.collectLatest {
             isLoading = it
-            Timber.d("isLoading: $it")
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.isRefreshing.collectLatest {
+            isRefreshing = it
         }
     }
 
     MainScreen(
         state = state,
         isLoading = isLoading,
+        isRefreshing = isRefreshing,
         onRefresh = viewModel::refresh,
-        onLoadMore = viewModel::load
+        onLoadMore = viewModel::load,
+        onLikeClick = viewModel::onLiked
     )
 }
 
@@ -77,79 +88,124 @@ internal fun MainRoute(
 private fun MainScreen(
     state: MainViewModel.State = MainViewModel.State(),
     isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onLoadMore: () -> Unit = {},
+    onLikeClick: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
     Scaffold(
         modifier = Modifier
             .fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text("Main") })
-        }
-    ) { scaffoldPadding ->
-        LazyVerticalGrid(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(scaffoldPadding)
-                .padding(horizontal = 16.dp),
-            columns = GridCells.Fixed(3),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            state.products.forEach { section ->
-                item(
-                    span = { GridItemSpan(3) }
-                ) {
-                    MainSectionScreen(
-                        title = section.title
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Kurly",
+                        style = MainTheme.typography.header01EB,
+                        fontStyle = FontStyle.Italic,
+                        color = MainColor.keyColor
                     )
                 }
-
-                when (section.type) {
-                    ProductType.VERTICAL -> {
-                        items(
-                            items = section.products,
-                            span = { GridItemSpan(3) }
-                        ) { product ->
-                            MainLargeProductItem(
-                                src = product.image,
-                                isLiked = state.likedIds.contains(product.id),
-                                title = product.name,
-                                price = product.originalPrice,
-                                originalPrice = product.discountedPrice,
-                                saleRatio = product.saleRate
-                            )
-                        }
+            )
+        }
+    ) { scaffoldPadding ->
+        PullToRefreshBox(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(scaffoldPadding),
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+        ) {
+            InfiniteLazyVerticalGrid(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                columns = GridCells.Fixed(3),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                onLoadMore = onLoadMore
+            ) {
+                state.products.forEach { section ->
+                    item(
+                        span = { GridItemSpan(maxLineSpan) }
+                    ) {
+                        MainSectionScreen(
+                            title = section.title
+                        )
                     }
 
-                    ProductType.HORIZONTAL -> {
-                        item(
-                            span = { GridItemSpan(3) }
-                        ) {
-                            LazyRow {
-                                items(section.products) { product ->
-                                    MainSmallProductItem(
-                                        src = product.image,
-                                        isLiked = state.likedIds.contains(product.id),
-                                        title = product.name,
-                                        price = product.originalPrice,
-                                        originalPrice = product.discountedPrice,
-                                        saleRatio = product.saleRate
-                                    )
+                    when (section.type) {
+                        ProductType.VERTICAL -> {
+                            items(
+                                items = section.products,
+                                span = { GridItemSpan(maxLineSpan) }
+                            ) { product ->
+                                MainLargeProductItem(
+                                    id = product.id,
+                                    src = product.image,
+                                    isLiked = state.likedIds.contains(product.id),
+                                    title = product.name,
+                                    price = product.originalPrice,
+                                    originalPrice = product.discountedPrice,
+                                    saleRatio = product.saleRate,
+                                    onLikeClick = onLikeClick
+                                )
+                            }
+                        }
+
+                        ProductType.HORIZONTAL -> {
+                            item(
+                                span = { GridItemSpan(maxLineSpan) }
+                            ) {
+                                LazyRow(
+                                    modifier = Modifier
+                                        .wrapContentHeight(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(section.products) { product ->
+                                        MainSmallProductItem(
+                                            id = product.id,
+                                            src = product.image,
+                                            isLiked = state.likedIds.contains(product.id),
+                                            title = product.name,
+                                            price = product.originalPrice,
+                                            originalPrice = product.discountedPrice,
+                                            saleRatio = product.saleRate,
+                                            onLikeClick = onLikeClick
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    ProductType.GRID -> {
-                        items(section.products) { product ->
-                            MainSmallProductItem(
-                                src = product.image,
-                                isLiked = state.likedIds.contains(product.id),
-                                title = product.name,
-                                price = product.originalPrice,
-                                originalPrice = product.discountedPrice,
-                                saleRatio = product.saleRate
+                        ProductType.GRID -> {
+                            items(section.products) { product ->
+                                MainSmallProductItem(
+                                    id = product.id,
+                                    src = product.image,
+                                    isLiked = state.likedIds.contains(product.id),
+                                    title = product.name,
+                                    price = product.originalPrice,
+                                    originalPrice = product.discountedPrice,
+                                    saleRatio = product.saleRate,
+                                    onLikeClick = onLikeClick
+                                )
+                            }
+                        }
+                    }
+                }
+                if (isLoading) {
+                    item(
+                        span = { GridItemSpan(maxLineSpan) }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp)
                             )
                         }
                     }
@@ -163,26 +219,26 @@ private fun MainScreen(
 private fun MainSectionScreen(
     title: String
 ) {
-    Spacer(modifier = Modifier.height(16.dp))
-
     Text(
         text = title,
         style = MainTheme.typography.header01EB
     )
-
-    Spacer(modifier = Modifier.height(16.dp))
 }
 
 @Composable
 private fun MainSmallProductItem(
+    id: Long,
     src: String?,
     isLiked: Boolean,
     title: String,
     price: Int,
     originalPrice: Int?,
-    saleRatio: Int?
+    saleRatio: Int?,
+    onLikeClick: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
     Column(
+        modifier = Modifier
+            .width(IntrinsicSize.Min),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Box {
@@ -201,7 +257,11 @@ private fun MainSmallProductItem(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(12.dp)
-                    .size(24.dp),
+                    .size(24.dp)
+                    .clickable(
+                        enabled = true,
+                        onClick = { onLikeClick(id, isLiked) }
+                    ),
                 painter = painterResource(
                     if (isLiked) {
                         kr.co.kurly.core.ui.R.drawable.ic_btn_heart_on
@@ -215,7 +275,9 @@ private fun MainSmallProductItem(
 
         Text(
             text = title,
-            style = MainTheme.typography.header01R
+            style = MainTheme.typography.body01R,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
 
         Text(
@@ -233,29 +295,40 @@ private fun MainSmallProductItem(
                 withStyle(MainTheme.typography.body01B.toSpanStyle()) {
                     append(price.toNumberFormat() + "원")
                 }
-            }
+            },
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
 
-        originalPrice?.let {
-            Text(
-                text = it.toNumberFormat() + "원",
-                style = MainTheme.typography.body01R.copy(
-                    color = MainColor.grey
-                ),
-                textDecoration = TextDecoration.LineThrough
-            )
-        }
+        Text(
+            modifier = Modifier,
+            text = if (originalPrice != null) {
+                originalPrice.toNumberFormat() + "원"
+            } else {
+                "-"
+            },
+            style = MainTheme.typography.body01R.copy(
+                color = if (originalPrice != null) {
+                    MainColor.grey
+                } else {
+                    MainColor.white
+                }
+            ),
+            textDecoration = TextDecoration.LineThrough,
+        )
     }
 }
 
 @Composable
 private fun MainLargeProductItem(
+    id: Long,
     src: String?,
     isLiked: Boolean,
     title: String,
     price: Int,
     originalPrice: Int?,
-    saleRatio: Int?
+    saleRatio: Int?,
+    onLikeClick: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -274,7 +347,11 @@ private fun MainLargeProductItem(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(12.dp)
-                    .size(24.dp),
+                    .size(24.dp)
+                    .clickable(
+                        enabled = true,
+                        onClick = { onLikeClick(id, isLiked) }
+                    ),
                 painter = painterResource(
                     if (isLiked) {
                         kr.co.kurly.core.ui.R.drawable.ic_btn_heart_on
@@ -288,7 +365,9 @@ private fun MainLargeProductItem(
 
         Text(
             text = title,
-            style = MainTheme.typography.header01R
+            style = MainTheme.typography.header01R,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
 
         Text(
@@ -317,7 +396,9 @@ private fun MainLargeProductItem(
                         append(it.toNumberFormat() + "원")
                     }
                 }
-            }
+            },
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -336,6 +417,7 @@ private fun MainScreenPreview() {
 private fun MainSmallProductPreview() {
     MainTheme {
         MainSmallProductItem(
+            id = 0,
             src = null,
             isLiked = true,
             title = "TEST",
@@ -351,6 +433,7 @@ private fun MainSmallProductPreview() {
 private fun MainLargeProductPreview() {
     MainTheme {
         MainLargeProductItem(
+            id = 0,
             src = null,
             isLiked = true,
             title = "TEST",

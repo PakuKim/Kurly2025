@@ -50,12 +50,24 @@ internal class ProductRepositoryImpl @Inject constructor(
         return local.fetchLikedIds()
     }
 
+    override suspend fun updateLiked(id: Long, isLiked: Boolean) {
+        if (isLiked) {
+            local.deleteLikedId(id)
+        } else {
+            local.saveLikedId(id)
+        }
+    }
+
     override fun fetchProducts(): Flow<List<ProductSection>> {
         return receiveNotification().mapLatest { products }
     }
 
     override suspend fun load(page: Int?) {
-        page?.let { currentPage = it }
+        page?.let {
+            currentPage = it
+            products.clear()
+        }
+
         if (currentPage > 0) _notification.emit(Unit)
     }
 }
