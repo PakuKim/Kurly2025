@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.parcelize.Parcelize
 import kr.co.kurly.core.ui.base.BaseViewModel
 import kr.co.kurly.domain.interactor.FetchProductLikedIdsUseCase
 import kr.co.kurly.domain.interactor.FetchProductListUseCase
@@ -20,7 +21,7 @@ import kr.co.kurly.domain.model.ProductSection
 import javax.inject.Inject
 
 @HiltViewModel
-internal open class MainViewModel @Inject constructor(
+internal class MainViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     fetchProductLikedIdsUseCase: FetchProductLikedIdsUseCase,
     private val fetchProductListUseCase: FetchProductListUseCase,
@@ -95,12 +96,31 @@ internal open class MainViewModel @Inject constructor(
     }
 
     override fun createInitialState(savedState: Parcelable?): State {
-        return State()
+        val state = (savedState as? State.SavedState)
+        return State(
+            likedIds = state?.likedIds ?: emptySet(),
+            products = state?.products?.toMutableStateList() ?: mutableStateListOf(),
+            hasMore = state?.hasMore == true,
+        )
     }
 
     data class State(
         val likedIds: Set<Long> = emptySet(),
         val products: SnapshotStateList<ProductSection> = mutableStateListOf(),
         val hasMore: Boolean = false,
-    ) : BaseViewModel.State
+    ) : BaseViewModel.State {
+        override fun toParcelable(): Parcelable? {
+            return SavedState(
+                likedIds = likedIds,
+                products = products,
+                hasMore = hasMore,
+            )
+        }
+        @Parcelize
+        data class SavedState(
+            val likedIds: Set<Long> = emptySet(),
+            val products: List<ProductSection> = emptyList(),
+            val hasMore: Boolean = false,
+        ): Parcelable
+    }
 }

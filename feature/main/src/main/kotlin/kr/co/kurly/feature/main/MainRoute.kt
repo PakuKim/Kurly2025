@@ -145,6 +145,7 @@ private fun MainScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 onLoadMore = onLoadMore
             ) {
+
                 state.products.forEachIndexed { index, section ->
                     item(
                         span = { GridItemSpan(maxLineSpan) }

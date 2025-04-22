@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kurly.android.library)
     alias(libs.plugins.kurly.android.hilt)
+    id("kotlin-parcelize")
 }
 
 android {
