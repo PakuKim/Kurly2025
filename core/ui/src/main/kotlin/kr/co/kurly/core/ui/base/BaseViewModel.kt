@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kr.co.kurly.common.model.CommonException
 import kotlin.coroutines.CoroutineContext
 
 abstract class BaseViewModel<STATE : BaseViewModel.State>(
@@ -49,7 +50,11 @@ abstract class BaseViewModel<STATE : BaseViewModel.State>(
 
     protected val ceh = CoroutineExceptionHandler { _, throwable ->
         throwable.printStackTrace()
-        setError(throwable.localizedMessage ?: "")
+
+        when (throwable) {
+            is CommonException -> setError(throwable.message)
+            else -> setError("오류가 발생하였습니다.")
+        }
     }
 
     protected inline fun launch(

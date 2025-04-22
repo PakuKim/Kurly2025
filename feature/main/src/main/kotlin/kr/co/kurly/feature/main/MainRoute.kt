@@ -22,6 +22,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -51,6 +53,7 @@ import kr.co.kurly.common.ext.toNumberFormat
 import kr.co.kurly.core.ui.theme.MainColor
 import kr.co.kurly.core.ui.theme.MainTheme
 import kr.co.kurly.core.ui.widget.InfiniteLazyVerticalGrid
+import kr.co.kurly.core.ui.widget.KurlySnackBarHost
 import kr.co.kurly.core.ui.widget.LoadingScreen
 import kr.co.kurly.domain.model.ProductType
 
@@ -59,6 +62,7 @@ internal fun MainRoute(
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackBarHostState = remember { SnackbarHostState() }
 
     var isLoading by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -75,9 +79,19 @@ internal fun MainRoute(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.error.collectLatest {
+            snackBarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
     LoadingScreen(isLoading = state.products.isEmpty()) {
         MainScreen(
             state = state,
+            snackBarHostState = snackBarHostState,
             isLoading = isLoading,
             isRefreshing = isRefreshing,
             onRefresh = viewModel::refresh,
@@ -91,6 +105,7 @@ internal fun MainRoute(
 @Composable
 private fun MainScreen(
     state: MainViewModel.State = MainViewModel.State(),
+    snackBarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -111,7 +126,8 @@ private fun MainScreen(
                     )
                 }
             )
-        }
+        },
+        snackbarHost = { KurlySnackBarHost(snackBarHostState) }
     ) { scaffoldPadding ->
         PullToRefreshBox(
             modifier = Modifier
