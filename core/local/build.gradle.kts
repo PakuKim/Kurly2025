@@ -3,16 +3,7 @@ import kr.co.kurly.local
 plugins {
     alias(libs.plugins.kurly.android.library)
     alias(libs.plugins.kurly.android.hilt)
-    id("androidx.room")
     id("kotlinx-serialization")
-}
-
-ksp {
-    arg("room.generateKotlin", "true")
-}
-
-room {
-    schemaDirectory("$projectDir/schemas")
 }
 
 android {

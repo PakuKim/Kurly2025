@@ -26,7 +26,6 @@ internal val Project.libs get() = the<LibrariesForLibs>()
 fun Project.app(){
     project.dependencies {
         implementations(
-            libs.coil,
             libs.coil.compose,
             libs.timber,
         )
@@ -45,11 +44,8 @@ fun Project.app(){
 fun Project.local() {
     project.dependencies {
         implementations(
-            libs.bundles.rooms,
             libs.datastore.preferences
         )
-
-        ksp(libs.room.compiler)
     }
 }
 

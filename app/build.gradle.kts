@@ -58,7 +58,6 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.local)
     implementation(projects.core.common)
-
     implementation(projects.feature.main)
 
     app()

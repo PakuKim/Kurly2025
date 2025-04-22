@@ -1,6 +1,5 @@
 package kr.co.kurly.core.ui.theme
 
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
@@ -31,5 +30,3 @@ internal val LightColorScheme = lightColorScheme(
     onSurfaceVariant = MainColor.white,
     outline = MainColor.black,
 )
-
-internal val DarkColorScheme = darkColorScheme()

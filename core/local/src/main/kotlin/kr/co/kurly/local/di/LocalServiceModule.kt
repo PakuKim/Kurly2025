@@ -1,6 +1,5 @@
 package kr.co.kurly.local.di
 
-import android.app.Application
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
@@ -24,13 +23,9 @@ import javax.inject.Singleton
 internal class LocalServiceModule {
     @Singleton
     @Provides
-    fun provideContext(application: Application): Context {
-        return application.applicationContext
-    }
-
-    @Singleton
-    @Provides
-    fun providePreferencesDataStore(@ApplicationContext context: Context): DataStore<Preferences> {
+    fun providePreferencesDataStore(
+        @ApplicationContext context: Context
+    ): DataStore<Preferences> {
         return PreferenceDataStoreFactory.create(
             corruptionHandler = ReplaceFileCorruptionHandler {
                 it.printStackTrace()

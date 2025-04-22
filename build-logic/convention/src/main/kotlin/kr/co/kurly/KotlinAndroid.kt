@@ -55,8 +55,6 @@ internal fun Project.configureKotlinAndroid(
 }
 
 private inline fun <reified T : KotlinBaseExtension> Project.configureKotlin() = configure<T> {
-    // Treat all Kotlin warnings as errors (disabled by default)
-    // Override by setting warningsAsErrors=true in your ~/.gradle/gradle.properties
     val warningsAsErrors: String? by project
     when (this) {
         is KotlinAndroidProjectExtension -> compilerOptions

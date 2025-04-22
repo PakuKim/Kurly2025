@@ -7,7 +7,3 @@ plugins {
 android {
     namespace = "kr.co.kurly.feature.main"
 }
-
-dependencies {
-    
-}
