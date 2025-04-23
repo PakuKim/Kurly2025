@@ -1,22 +1,28 @@
--dontwarn org.bouncycastle.jsse.BCSSLParameters
--dontwarn org.bouncycastle.jsse.BCSSLSocket
--dontwarn org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
--dontwarn org.conscrypt.Conscrypt$Version
--dontwarn org.conscrypt.Conscrypt
--dontwarn org.conscrypt.ConscryptHostnameVerifier
--dontwarn org.openjsse.javax.net.ssl.SSLParameters
--dontwarn org.openjsse.javax.net.ssl.SSLSocket
--dontwarn org.openjsse.net.ssl.OpenJSSE
+-keep interface kr.co.kurly.core.ui.base.BaseViewModel implements android.os.Parcelable { *; }
+-keep class kr.co.kurly.domain.model.** implements android.os.Parcelable { *; }
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+}
 
--dontwarn sun.misc.**
+-keep class androidx.navigation.** { *; }
+-dontwarn androidx.navigation.**
 
--keep class com.crashlytics.** { *; }
--dontwarn com.crashlytics.**
+-keep @androidx.compose.runtime.Composable class * { *; }
+-keep class androidx.compose.** { *; }
+
+-keep class androidx.activity.ComponentActivity { *; }
+-keep class androidx.lifecycle.ViewModel { *; }
 
 -keepclassmembers class **.R$* {
     public static <fields>;
 }
 -keep class **.R$*
+
+-keepattributes Signature
+-keepattributes SourceFile,LineNumberTable
+
+-dontwarn org.slf4j.impl.StaticLoggerBinder
+-dontwarn org.slf4j.impl.StaticMDCBinder
 
 # With R8 full mode generic signatures are stripped for classes that are not
 # kept. Suspend functions are wrapped in continuations where the type argument

@@ -9,7 +9,7 @@ android {
 
 dependencies {
     implementation(projects.core.common)
-    api(libs.bundles.composes)
 
+    api(libs.bundles.composes)
     api(libs.coil.compose)
 }

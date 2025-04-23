@@ -24,6 +24,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kr.co.kurly.common.model.CommonException
+import kr.co.kurly.core.remote.BuildConfig
 import kr.co.kurly.mockserver.MockInterceptor
 import org.json.JSONObject
 import timber.log.Timber
@@ -57,7 +58,11 @@ internal class NetworkModule {
             }
 
             install(Logging) {
-                level = LogLevel.ALL
+                level = if (BuildConfig.DEBUG) {
+                    LogLevel.BODY
+                } else {
+                    LogLevel.NONE
+                }
 
                 logger = object : Logger {
                     override fun log(message: String) {
@@ -73,7 +78,7 @@ internal class NetworkModule {
             }
 
             install(DefaultRequest) {
-                url(BASE_URL)
+                url(BuildConfig.BASE_URL)
                 contentType(ContentType.Application.Json)
             }
 
@@ -107,7 +112,6 @@ internal class NetworkModule {
     }
 
     companion object {
-        private const val BASE_URL = "https://kurly.com/"
         private const val RESPONSE_ERROR_MESSAGE = "message"
         private const val RESPONSE_ERROR_CODE = "code"
 

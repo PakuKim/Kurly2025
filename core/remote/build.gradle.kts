@@ -13,6 +13,14 @@ android {
         consumerProguardFiles("consumer-proguard-rules.pro")
     }
 
+    flavorDimensions.add("environment")
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            buildConfigField("String", "BASE_URL", "\"https://kurly.com/\"")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

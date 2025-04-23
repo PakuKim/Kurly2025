@@ -6,6 +6,10 @@ plugins {
 android {
     namespace = "kr.co.kurly.core.mockserver"
 
+    defaultConfig {
+        consumerProguardFiles("consumer-proguard-rules.pro")
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

@@ -21,6 +21,14 @@ android {
         }
     }
 
+    flavorDimensions.add("environment")
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
