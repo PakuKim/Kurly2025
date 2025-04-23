@@ -96,11 +96,11 @@ internal class MainViewModel @Inject constructor(
     }
 
     override fun createInitialState(savedState: Parcelable?): State {
-        val state = (savedState as? State.SavedState)
+        val state = (savedState as? State.SavedState) ?: return State()
         return State(
-            likedIds = state?.likedIds ?: emptySet(),
-            products = state?.products?.toMutableStateList() ?: mutableStateListOf(),
-            hasMore = state?.hasMore == true,
+            likedIds = state.likedIds,
+            products = state.products.toMutableStateList(),
+            hasMore = state.hasMore,
         )
     }
 
