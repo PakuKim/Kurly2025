@@ -10,6 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.parcelize.Parcelize
 import kr.co.kurly.core.ui.base.BaseViewModel
@@ -24,7 +25,7 @@ import javax.inject.Inject
 internal class MainViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     fetchProductLikedIdsUseCase: FetchProductLikedIdsUseCase,
-    private val fetchProductListUseCase: FetchProductListUseCase,
+    fetchProductListUseCase: FetchProductListUseCase,
     private val loadProductUseCase: LoadProductUseCase,
     private val updateProductLikedUseCase: UpdateProductLikedUseCase,
 ) : BaseViewModel<MainViewModel.State>(savedStateHandle) {
@@ -34,38 +35,19 @@ internal class MainViewModel @Inject constructor(
     private val _isLoading: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private var fetchingJob: Job? = null
-
     fun onLiked(id: Long, isLiked: Boolean) = launch {
         updateProductLikedUseCase(id, isLiked)
     }
 
     fun refresh() = launch {
-        if (fetchingJob?.isActive == false) fetch()
         setRefreshing(true)
         loadProductUseCase(true)
     }
 
     fun load() = launch {
-        if (fetchingJob?.isActive == false) fetch()
         if (currentState.hasMore && !isLoading.value) {
             setLoading(true)
             loadProductUseCase(false)
-        }
-    }
-
-    private fun fetch() {
-        fetchingJob = launch {
-            fetchProductListUseCase().collectLatest {
-                setRefreshing(false)
-                setLoading(false)
-                updateState {
-                    copy(
-                        hasMore = it.first,
-                        products = it.second.toMutableStateList()
-                    )
-                }
-            }
         }
     }
 
@@ -84,7 +66,19 @@ internal class MainViewModel @Inject constructor(
     }
 
     init {
-        fetch()
+        launch {
+            fetchProductListUseCase().catch { }
+                .collectLatest {
+                    setRefreshing(false)
+                    setLoading(false)
+                    updateState {
+                        copy(
+                            hasMore = it.first,
+                            products = it.second.toMutableStateList()
+                        )
+                    }
+                }
+        }
 
         launch {
             fetchProductLikedIdsUseCase().collectLatest {
@@ -112,15 +106,16 @@ internal class MainViewModel @Inject constructor(
         override fun toParcelable(): Parcelable? {
             return SavedState(
                 likedIds = likedIds,
-                products = products,
+                products = products.toList(),
                 hasMore = hasMore,
             )
         }
+
         @Parcelize
         data class SavedState(
             val likedIds: Set<Long> = emptySet(),
             val products: List<ProductSection> = emptyList(),
             val hasMore: Boolean = false,
-        ): Parcelable
+        ) : Parcelable
     }
 }
