@@ -5,10 +5,6 @@ plugins {
 
 android {
     namespace = "kr.co.kurly.core.data"
-
-    buildFeatures {
-        buildConfig = true
-    }
 }
 
 dependencies {
