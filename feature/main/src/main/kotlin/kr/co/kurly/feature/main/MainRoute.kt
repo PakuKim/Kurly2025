@@ -1,6 +1,7 @@
 package kr.co.kurly.feature.main
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -172,9 +174,9 @@ private fun MainScreen(
                                     src = product.image,
                                     isLiked = state.likedIds.contains(product.id),
                                     title = product.name,
-                                    originalPrice = product.originalPrice,
+                                    price = product.originalPrice,
                                     discountedPrice = product.disCountedPrice,
-                                    saleRatio = product.saleRate,
+                                    saleRate = product.saleRate,
                                     onLikeClick = onLikeClick
                                 )
                             }
@@ -303,6 +305,7 @@ private fun MainSmallProductItem(
         Text(
             text = title,
             style = MainTheme.typography.body01R,
+            fontSize = 12.sp,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
@@ -356,9 +359,9 @@ private fun MainLargeProductItem(
     src: String?,
     isLiked: Boolean,
     title: String,
-    originalPrice: Int,
+    price: Int,
     discountedPrice: Int?,
-    saleRatio: Int?,
+    saleRate: Int?,
     onLikeClick: (Long, Boolean) -> Unit = { _, _ -> }
 ) {
     Column(
@@ -403,7 +406,7 @@ private fun MainLargeProductItem(
 
         Text(
             text = buildAnnotatedString {
-                saleRatio?.let {
+                saleRate?.let {
                     withStyle(
                         MainTheme.typography.body01B.toSpanStyle().copy(
                             color = MainColor.orange
@@ -430,7 +433,7 @@ private fun MainLargeProductItem(
                         MainTheme.typography.body01B.toSpanStyle()
                     }
                 ) {
-                    append(originalPrice.toNumberFormat() + "원")
+                    append(price.toNumberFormat() + "원")
                 }
             },
             maxLines = 1,
@@ -452,15 +455,17 @@ private fun MainScreenPreview() {
 @Composable
 private fun MainSmallProductPreview() {
     MainTheme {
-        MainSmallProductItem(
-            id = 0,
-            src = null,
-            isLiked = true,
-            title = "TEST",
-            price = 10000,
-            discountedPrice = 10000,
-            saleRate = 5
-        )
+        Box(Modifier.background(MainColor.white)) {
+            MainSmallProductItem(
+                id = 0,
+                src = null,
+                isLiked = true,
+                title = "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST",
+                price = Int.MAX_VALUE,
+                discountedPrice = Int.MAX_VALUE,
+                saleRate = 5
+            )
+        }
     }
 }
 
@@ -468,14 +473,16 @@ private fun MainSmallProductPreview() {
 @Composable
 private fun MainLargeProductPreview() {
     MainTheme {
-        MainLargeProductItem(
-            id = 0,
-            src = null,
-            isLiked = true,
-            title = "TEST",
-            originalPrice = 10000,
-            discountedPrice = 10000,
-            saleRatio = 5
-        )
+        Box(Modifier.background(MainColor.white)) {
+            MainLargeProductItem(
+                id = 0,
+                src = null,
+                isLiked = true,
+                title = "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST",
+                price = Int.MAX_VALUE,
+                discountedPrice = Int.MAX_VALUE,
+                saleRate = 5
+            )
+        }
     }
 }
